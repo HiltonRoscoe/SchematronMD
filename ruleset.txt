@@ -24,23 +24,25 @@ $group.init()
 #if($rel.humanType == 'Association')
 #set($roleName = "")
 #set($isNav = false)
+#set($aggregation = false)
 #foreach($end in $rel.memberEnd)
 ## GET THE ROLE NAME, IF ANY ##
-#if($end.type == $class)
-#set($roleName = $end.name)
-#end
+#if($end.type == $class)#set($roleName = $end.name)#end
+#if($end.aggregation == "composite")#set($aggregation=true)#end
 ## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE ##
 #if($end.owner != $class && $end.owner.humanType == 'Class')
 #set($isNav = true)
 #end
 #end
 #end
+#if(!$aggregation)
 #foreach ($re in $sorter.sort($rel.relatedElement))
 ## DONT GET THE ONE THAT IS THE CURRENT CLASS
 #if($re != $class && $isNav)
 #set($refId = $roleName + "Ids")
 name() = '$refId' and
 ../name() = '$re.name'
+#end
 #end
 #end
 #end

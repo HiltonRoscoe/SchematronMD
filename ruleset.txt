@@ -1,3 +1,4 @@
+#import('hrsort', 'com.hiltonroscoe.mdreportext.Sorter')
 #set($packages = $array.createArray())
 #set($void = $array.addCollection($packages, $Package))
 #set($void = $array.addCollection($packages, $SmartPackage))
@@ -17,34 +18,26 @@
 #if(!$report.getAppliedStereotypeByName($input, "Root"))
 #set($relationList = $report.getRelationship($input))
 #foreach ($rel in $relationList)
-## ONLY WANT ASSOCIATIONS ##
+## ONLY WANT ASSOCIATIONS **
 #if($rel.humanType == 'Association')
-## DO NOT REMOVE, WORKAROUND FOR A BUG THAT CAUSES $input to BE ##
-## REDEFINED!! ##
+## DO NOT REMOVE, WORKAROUND FOR A BUG THAT CAUSES $input to BE **
+## REDEFINED!! **
 #set($inputName = $input.name)
 #foreach($relEnd in $rel.memberEnd)
 #if($relEnd.aggregation == "composite")
 #if($relEnd.owner.name != $inputName && $relEnd.owner.humanType == 'Class')
 #rootWalk( $relEnd.owner, $path)
-##set ($void = $path.add($relEnd.owner.name))
 #end
 #end
 #end
 #end
 #end
-#else
-##ROOT!
 #end
 #end
-## END MACROS ##
+## END MACROS **
 #foreach ($class in $sorter.sort($classList))
-!CLASS $class.name
-#set($path = $array.createArray())
-#rootWalk($class, $path)
-<sch:rule context="#foreach($pathPart in $path)err:$pathPart#if(!$foreach.last)/#end#end">
-
 #set($relationList = $report.getRelationship($class))
-$group.init()
+#set($void = $group.init())
 #foreach ($relation in $relationList)
 #set($void = $group.put($relation.humanType, $relation))
 #end
@@ -52,40 +45,47 @@ $group.init()
 #if (!$relationList.isEmpty())
 #foreach ($key in $sorter.sort($group.groupNames()))
 #foreach($rel in $sorter.sort($group.get($key)))
-## ONLY WANT ASSOCIATIONS ##
+## ONLY WANT ASSOCIATIONS **
 #if($rel.humanType == 'Association')
-## RESET FOR NEXT IERATION ##
+## RESET FOR NEXT IERATION **
 #set($roleName = "")
 #set($isNav = false)
 #set($aggregation = false)
 #set($plural = false)
 #foreach($relEnd in $rel.memberEnd)
-## GET THE ROLE NAME, IF ANY ##
+## GET THE ROLE NAME, IF ANY **
 #if($relEnd.type == $class)#set($roleName = $relEnd.name)#end
-#if($relEnd.aggregation == "composite")#set($aggregation=true)#end
-#if($relEnd.upperValue.value == -1 or $relEnd.upperValue.value > 1)#set($plural = true)#end
-## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE ##
+#if($relEnd.aggregation == "composite")#set($aggregation = true)#end
+#if($relEnd.upperValue.value == -1 || $relEnd.upperValue.value > 1)#set($plural = true)#end
+## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE **
 #if($relEnd.owner != $class && $relEnd.owner.humanType == 'Class')
 #set($isNav = true)
 #end
-## END FOR EACH ##
+## END FOR EACH **
 #end
-## END ASSOCIATIOn ##
+## END ASSOCIATION ** 
 #end
 #if(!$aggregation)
-#foreach ($re in $sorter.sort($rel.relatedElement))
-## DONT GET THE ONE THAT IS THE CURRENT CLASS
+#foreach($re in $sorter.sort($rel.relatedElement))
+## DONT GET THE ONE THAT IS THE CURRENT CLASS **
 #if($re != $class && $isNav)
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $roleName + $suffix)
-$xPathExprs.add("name() = '$refId' and ../name() = '$re.name'")
+#set($void = $xPathExprs.add("name() = '$refId' and #if($list.size($re.superClass) > 0)string(../@xsi:type) = '$re.name'#else../name() = '$re.name'#end"))
 #end
 #end
 #end
 #end
 #end
-REALLY END ASS
-##TODO CHECK WE GOT ANY EX PR
-<sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">Words</sch:assert>
+## TODO CHECK WE GOT ANY EX PR **
+#set($path = $array.createArray())
+#rootWalk($class, $path)
+#set($void = $hrsort.reverse($path))
+## ONLY OUTPUT WHEN WE HAVE AT LEAST ONE EXPR **
+#if(!$xPathExprs.isEmpty())
+<sch:rule context="#foreach($pathPart in $path)err:$pathPart#if(!$foreach.last)/#end#end">
+    <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">$path must have refereant from $xPathExprs</sch:assert>
+</sch:rule>
+#end
 #end
 #end

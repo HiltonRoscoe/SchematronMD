@@ -10,13 +10,45 @@
 #end
 #end
 #end
+## BEGIN MACROS ##
+## RECURSIVELY CALLS ITSELF UNTIL THE ROOT IS FOUND ##
+#macro( rootWalk $input, $path)
+#set ($void = $path.add($input.name))
+#if(!$report.getAppliedStereotypeByName($input, "Root"))
+#set($relationList = $report.getRelationship($input))
+#foreach ($rel in $relationList)
+## ONLY WANT ASSOCIATIONS ##
+#if($rel.humanType == 'Association')
+## DO NOT REMOVE, WORKAROUND FOR A BUG THAT CAUSES $input to BE ##
+## REDEFINED!! ##
+#set($inputName = $input.name)
+#foreach($relEnd in $rel.memberEnd)
+#if($relEnd.aggregation == "composite")
+#if($relEnd.owner.name != $inputName && $relEnd.owner.humanType == 'Class')
+#rootWalk( $relEnd.owner, $path)
+##set ($void = $path.add($relEnd.owner.name))
+#end
+#end
+#end
+#end
+#end
+#else
+##ROOT!
+#end
+#end
+## END MACROS ##
 #foreach ($class in $sorter.sort($classList))
 !CLASS $class.name
+#set($path = $array.createArray())
+#rootWalk($class, $path)
+<sch:rule context="#foreach($pathPart in $path)err:$pathPart#if(!$foreach.last)/#end#end">
+
 #set($relationList = $report.getRelationship($class))
 $group.init()
 #foreach ($relation in $relationList)
 #set($void = $group.put($relation.humanType, $relation))
 #end
+#set($xPathExprs = $array.createArray())
 #if (!$relationList.isEmpty())
 #foreach ($key in $sorter.sort($group.groupNames()))
 #foreach($rel in $sorter.sort($group.get($key)))
@@ -27,16 +59,18 @@ $group.init()
 #set($isNav = false)
 #set($aggregation = false)
 #set($plural = false)
-#foreach($end in $rel.memberEnd)
+#foreach($relEnd in $rel.memberEnd)
 ## GET THE ROLE NAME, IF ANY ##
-#if($end.type == $class)#set($roleName = $end.name)#end
-#if($end.aggregation == "composite")#set($aggregation=true)#end
-#if($end.upperValue.value == -1 or $end.upperValue.value > 1)#set($plural = true)#end
+#if($relEnd.type == $class)#set($roleName = $relEnd.name)#end
+#if($relEnd.aggregation == "composite")#set($aggregation=true)#end
+#if($relEnd.upperValue.value == -1 or $relEnd.upperValue.value > 1)#set($plural = true)#end
 ## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE ##
-#if($end.owner != $class && $end.owner.humanType == 'Class')
+#if($relEnd.owner != $class && $relEnd.owner.humanType == 'Class')
 #set($isNav = true)
 #end
+## END FOR EACH ##
 #end
+## END ASSOCIATIOn ##
 #end
 #if(!$aggregation)
 #foreach ($re in $sorter.sort($rel.relatedElement))
@@ -44,11 +78,14 @@ $group.init()
 #if($re != $class && $isNav)
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $roleName + $suffix)
-(name() = '$refId' and ../name() = '$re.name') or 
+$xPathExprs.add("name() = '$refId' and ../name() = '$re.name'")
 #end
 #end
 #end
 #end
 #end
+REALLY END ASS
+##TODO CHECK WE GOT ANY EX PR
+<sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">Words</sch:assert>
 #end
 #end

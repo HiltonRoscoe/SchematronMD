@@ -22,13 +22,16 @@ $group.init()
 #foreach($rel in $sorter.sort($group.get($key)))
 ## ONLY WANT ASSOCIATIONS ##
 #if($rel.humanType == 'Association')
+## RESET FOR NEXT IERATION ##
 #set($roleName = "")
 #set($isNav = false)
 #set($aggregation = false)
+#set($plural = false)
 #foreach($end in $rel.memberEnd)
 ## GET THE ROLE NAME, IF ANY ##
 #if($end.type == $class)#set($roleName = $end.name)#end
 #if($end.aggregation == "composite")#set($aggregation=true)#end
+#if($end.upperValue.value == -1 or $end.upperValue.value > 1)#set($plural = true)#end
 ## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE ##
 #if($end.owner != $class && $end.owner.humanType == 'Class')
 #set($isNav = true)
@@ -39,9 +42,9 @@ $group.init()
 #foreach ($re in $sorter.sort($rel.relatedElement))
 ## DONT GET THE ONE THAT IS THE CURRENT CLASS
 #if($re != $class && $isNav)
-#set($refId = $roleName + "Ids")
-name() = '$refId' and
-../name() = '$re.name'
+#if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
+#set($refId = $roleName + $suffix)
+(name() = '$refId' and ../name() = '$re.name') or 
 #end
 #end
 #end

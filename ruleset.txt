@@ -11,33 +11,6 @@
 #end
 #end
 #end
-## BEGIN MACROS ##
-## RECURSIVELY CALLS ITSELF UNTIL THE ROOT IS FOUND ##
-#macro( rootWalk $input, $path)
-## DO SPECIAL LOGIC FOR GENERALIZATIONS **
-#if($list.size($class.superClass) > 0)
-#end
-#set ($void = $path.add($input.name))
-#if(!$report.getAppliedStereotypeByName($input, "Root"))
-#set($relationList = $report.getRelationship($input))
-#foreach ($rel in $relationList)
-## ONLY WANT ASSOCIATIONS **
-#if($rel.humanType == 'Association')
-## DO NOT REMOVE, WORKAROUND FOR A BUG THAT CAUSES $input to BE **
-## REDEFINED!! **
-#set($inputName = $input.name)
-#foreach($relEnd in $rel.memberEnd)
-#if($relEnd.clientAggregation == "composite")
-#if($relEnd.owner.name != $inputName && $relEnd.owner.humanType == 'Class')
-#rootWalk( $relEnd.owner, $path)
-#end
-#end
-#end
-#end
-#end
-#end
-#end
-## END MACROS **
 #foreach ($class in $sorter.sort($classList))
 #set($relationList = $report.getRelationship($class))
 #set($xPathExprs = $array.createArray())
@@ -71,6 +44,7 @@
 ## END ASSOCIATION ** 
 #end
 #end
+## LOGIC FOR REVERSE LOOKUP **
 #if(!$clientAggregation && $isNav)
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $clientRoleName + $suffix)
@@ -78,13 +52,8 @@
 #end
 #end
 #end
-## TODO CHECK WE GOT ANY EX PR **
-#set($path = $array.createArray())
-#rootWalk($class, $path)
-#set($void = $hrsort.reverse($path))
 ## ONLY OUTPUT WHEN WE HAVE AT LEAST ONE EXPR **
 #if(!$xPathExprs.isEmpty())
-##<sch:rule context="#foreach($pathPart in $path)err:$pathPart#if(!$foreach.last)/#end#end">
 <sch:rule context="element(*, err:$class.name)">
     <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">$path must have refereant from $xPathExprs</sch:assert>
 </sch:rule>

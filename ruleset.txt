@@ -74,7 +74,7 @@
 #if(!$clientAggregation && $isNav)
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $clientRoleName + $suffix)
-#set($void = $xPathExprs.add("name() = '$refId' and #if($list.size($clientClass.superClass) > 0)string(../@xsi:type) = '$clientClass.name'#else../name() = '$clientClass.name'#end"))
+#set($void = $xPathExprs.add("name() = '$refId' and .. instance of element(*, err:$clientClass.name)"))
 #end
 #end
 #end

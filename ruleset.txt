@@ -1,4 +1,3 @@
-#import('hrsort', 'com.hiltonroscoe.mdreportext.Sorter')
 #set($packages = $array.createArray())
 #set($void = $array.addCollection($packages, $Package))
 #set($void = $array.addCollection($packages, $SmartPackage))
@@ -11,9 +10,11 @@
 #end
 #end
 #end
+## BEGIN BUSINESS LOGIC **
 #foreach ($class in $sorter.sort($classList))
 #set($relationList = $report.getRelationship($class))
 #set($xPathExprs = $array.createArray())
+#set($forwardLookups = $array.createArray())
 #foreach($rel in $relationList)
 #set($clientClass = $report.getClientElement($rel))
 #set($supplierClass = $report.getSupplierElement($rel))
@@ -21,7 +22,8 @@
 #if($rel.humanType == 'Association')
 ## RESET FOR NEXT IERATION **
 #set($clientRoleName = "")
-#set($isNav = false)
+#set($clientIsNav = false)
+#set($supplierIsNav = false)
 #set($clientAggregation = false)
 #set($plural = false)
 #set($selfRef = false)
@@ -39,23 +41,31 @@
 ## CHECK IF RELATIONSHIP IS SELF REFERENTIAL **
 #if($supplierClass == $clientClass)#set($selfRef = true)#end
 ## CHECK IF WE HAVE A NAVIGABLE END FROM OTHER SIDE **
-#if($clientClass != $class || $selfRef)
-#set($isNav = true)
-## END ASSOCIATION ** 
+#if($clientClass != $class || $selfRef)#set($clientIsNav = true)#end
+#if($supplierClass != $class || $selfRef)#set($supplierIsNav = true)#end
 #end
-#end
+## END RELS **
 ## LOGIC FOR REVERSE LOOKUP **
-#if(!$clientAggregation && $isNav)
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $clientRoleName + $suffix)
+#if(!$clientAggregation && $clientIsNav)
 #set($void = $xPathExprs.add("name() = '$refId' and .. instance of element(*, err:$clientClass.name)"))
+#end
+## LOGIC FOR FORWARD LOOKUP **
+#if(!$clientAggregation && $supplierIsNav)
+#set($void = $forwardLookups.add($refId))
 #end
 #end
 #end
 ## ONLY OUTPUT WHEN WE HAVE AT LEAST ONE EXPR **
-#if(!$xPathExprs.isEmpty())
+#if(!$xPathExprs.isEmpty() || !$forwardLookups.isEmpty())
 <sch:rule context="element(*, err:$class.name)">
+#if(!$xPathExprs.isEmpty())
     <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">$path must have refereant from $xPathExprs</sch:assert>
+#end
+#foreach($forwardLookup in $forwardLookups)
+    <sch:assert test="not(id(err:$forwardLookup)[not(. instance of element(*, err:$supplierClass.name))])">$forwardLookup must point to an element of type $supplierClass.name</sch:assert>
+#end
 </sch:rule>
 #end
 #end

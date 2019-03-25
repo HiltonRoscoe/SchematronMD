@@ -53,7 +53,10 @@
 #end
 ## LOGIC FOR FORWARD LOOKUP **
 #if(!$clientAggregation && $supplierIsNav)
-#set($void = $forwardLookups.add($refId))
+#set($tempArray = $array.createArray())
+#set($void = $tempArray.add($refId))
+#set($void = $tempArray.add($supplierClass.name))
+#set($void = $forwardLookups.add($tempArray))
 #end
 #end
 #end
@@ -64,7 +67,7 @@
     <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">$path must have refereant from $xPathExprs</sch:assert>
 #end
 #foreach($forwardLookup in $forwardLookups)
-    <sch:assert test="not(id(err:$forwardLookup)[not(. instance of element(*, err:$supplierClass.name))])">$forwardLookup must point to an element of type $supplierClass.name</sch:assert>
+    <sch:assert test="not(id(err:$list.get($forwardLookup, 0))[not(. instance of element(*, err:$list.get($forwardLookup,1)))])">$list.get($forwardLookup, 0) must point to an element of type $list.get($forwardLookup, 1)</sch:assert>
 #end
 </sch:rule>
 #end

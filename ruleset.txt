@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2"
-    xmlns:sqf="http://www.schematron-quickfix.com/validator/process"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">    
-    <sch:ns uri="NIST_V2_election_results_reporting.xsd" prefix="err"/>    
-    <sch:ns uri="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>    
-    <!-- Schema validators can quickly find missing references, but what about redundant ones?
-        -->
-    <xsl:import-schema namespace="NIST_V2_election_results_reporting.xsd" schema-location="NIST_V2_election_results_reporting.xsd" />
-    <sch:pattern>
+<!-- 
+Generated via
+MagicDraw Template for Schematron (SchematronMD)
+-->
 #set($packages = $array.createArray())
 #set($void = $array.addCollection($packages, $Package))
 #set($void = $array.addCollection($packages, $SmartPackage))
 #foreach ($package in $sorter.sort($packages, "qualifiedName"))
+#set($majorVersion = $report.getStereotypePropertyString($package, "XML Schema", "major_version"))
+#set($schemaFilename = $report.getStereotypePropertyString($package, "XML Schema", "schema_filename").replace("<MAJOR_VERSION>",$majorVersion))
+#set($targetNamespace = $report.getStereotypePropertyString($package, "XML Schema", "targetNamespace").replace("<MAJOR_VERSION>",$majorVersion))
+<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2"
+    xmlns:sqf="http://www.schematron-quickfix.com/validator/process"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">    
+    <sch:ns uri="$targetNamespace" prefix="cdf"/>    
+    <sch:ns uri="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>    
+    <xsl:import-schema namespace="$targetNamespace" schema-location="$schemaFilename" />
+    <sch:pattern>
 #set($qualifiedName = $package.qualifiedName)
 #set ($classList = $array.createArray())
 #foreach ($element in $report.getOwnedElementsIncludingAdditional($package, true))
@@ -59,7 +64,10 @@
 #if($plural)#set($suffix = "Ids")#else#set($suffix = "Id")#end
 #set($refId = $clientRoleName + $suffix)
 #if(!$clientAggregation && $clientIsNav)
-#set($void = $xPathExprs.add("name() = '$refId' and .. instance of element(*, err:$clientClass.name)"))
+#set($tempArray = $array.createArray())
+#set($void = $tempArray.add("local-name() = '$refId' and .. instance of element(*, cdf:$clientClass.name)"))
+#set($void = $tempArray.add($clientClass.name))
+#set($void = $xPathExprs.add($tempArray))
 #end
 ## LOGIC FOR FORWARD LOOKUP **
 #if(!$clientAggregation && $supplierIsNav)
@@ -72,12 +80,12 @@
 #end
 ## ONLY OUTPUT WHEN WE HAVE AT LEAST ONE EXPR **
 #if(!$xPathExprs.isEmpty() || !$forwardLookups.isEmpty())
-        <sch:rule context="element(*, err:$class.name)">
+        <sch:rule context="element(*, cdf:$class.name)">
 #if(!$xPathExprs.isEmpty())
-            <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($expr)#if(!$foreach.last) or #end#end]) > 0">$class.name (<xsl:value-of select="current()/@ObjectId" />) must have refereant from $xPathExprs</sch:assert>
+            <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($list.get($expr,0))#if(!$foreach.last) or #end#end]) > 0">$class.name (<xsl:value-of select="current()/@ObjectId" />) must have refereant from #foreach($expr in $xPathExprs)$list.get($expr,1)#if(!$foreach.last), #end#end</sch:assert>
 #end
 #foreach($forwardLookup in $forwardLookups)
-            <sch:assert test="not(id(err:$list.get($forwardLookup, 0))[not(. instance of element(*, err:$list.get($forwardLookup,1)))])">$list.get($forwardLookup, 0) (<xsl:value-of select="err:$list.get($forwardLookup, 0)" />) must point to an element of type $list.get($forwardLookup, 1)</sch:assert>
+            <sch:assert test="not(id(cdf:$list.get($forwardLookup, 0))[not(. instance of element(*, cdf:$list.get($forwardLookup,1)))])">$list.get($forwardLookup, 0) (<xsl:value-of select="cdf:$list.get($forwardLookup, 0)" />) must point to an element of type $list.get($forwardLookup, 1)</sch:assert>
 #end
         </sch:rule>
 #end

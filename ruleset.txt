@@ -82,7 +82,7 @@ MagicDraw Template for Schematron (SchematronMD)
 #if(!$xPathExprs.isEmpty() || !$forwardLookups.isEmpty())
         <sch:rule context="element(*, cdf:$class.name)">
 #if(!$xPathExprs.isEmpty())
-            <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($list.get($expr,0))#if(!$foreach.last) or #end#end]) > 0">$class.name (<xsl:value-of select="current()/@ObjectId" />) must have refereant from #foreach($expr in $xPathExprs)$list.get($expr,1)#if(!$foreach.last), #end#end</sch:assert>
+            <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($list.get($expr,0))#if(!$foreach.last) or #end#end]) > 0">$class.name (<xsl:value-of select="current()/@ObjectId" />) must have reference from #foreach($expr in $xPathExprs)$list.get($expr,1)#if(!$foreach.last), #end#end</sch:assert>
 #end
 #foreach($forwardLookup in $forwardLookups)
             <sch:assert test="not(id(cdf:$list.get($forwardLookup, 0))[not(. instance of element(*, cdf:$list.get($forwardLookup,1)))])">$list.get($forwardLookup, 0) (<xsl:value-of select="cdf:$list.get($forwardLookup, 0)" />) must point to an element of type $list.get($forwardLookup, 1)</sch:assert>

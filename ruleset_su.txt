@@ -3,10 +3,10 @@
 Generated via
 MagicDraw Template for Schematron without Schema-awareness (SchematronMD)
 -->
-#macro(runClass $class)
-I GOT CALLED!
+#macro(runClass $class $parentClass)
+
 ## BEGIN BUSINESS LOGIC **
-#set($relationList = $report.getBaseClassAssociations($class))
+#set($relationList = $report.getRelationship($class))
 ## GET RELATIONSHIPS FROM BASE CLASSES, IF ANY **
 ##set($void = $array.addCollection($relationList, $report.getBaseClassAssociations($class)))
 #set($xPathExprs = $array.createArray())
@@ -18,6 +18,8 @@ I GOT CALLED!
 #if($rel.humanType == 'Generalization')
 ## GET CHILD CLASSES FOR CLASS **
 #if($rel.general == $class)
+## CALL NOW, WILL ENSURE CHILDREN OUTPUT BEFORE PARENT
+#runClass($rel.specific, $class)
 #set($void = $childClasses.add($rel.specific))
 #end
 #end
@@ -30,7 +32,6 @@ I GOT CALLED!
 #set($clientAggregation = false)
 #set($plural = false)
 #set($selfRef = false)
-#set($classIsChild = false)
 ## RUN BOTH SIDES, GATHERING THE DATA WE NEED **
 #foreach($relEnd in $rel.memberEnd)
 ## START CLIENT SIDE CHECKS **
@@ -70,7 +71,7 @@ I GOT CALLED!
 #end
 ## ONLY OUTPUT WHEN WE HAVE AT LEAST ONE EXPR **
 #if(!$xPathExprs.isEmpty() || !$forwardLookups.isEmpty())
-        <sch:rule mp:class="$class.name">
+        <sch:rule mp:class="$class.name" #if($parentClass)mp:baseClass="$parentClass.name"#end>
 ###if(!$xPathExprs.isEmpty())
 ##            <sch:assert test="count(idref(current()/@ObjectId)[#foreach($expr in $xPathExprs)($list.get($expr,0))#if(!$foreach.last) or #end#end]) > 0">$class.name (<xsl:value-of select="current()/@ObjectId" />) must have reference from #foreach($expr in $xPathExprs)$list.get($expr,1)#if(!$foreach.last), #end#end</sch:assert>
 ###end
@@ -110,7 +111,7 @@ I GOT CALLED!
 #end
 #if($hasParent)
 ## TODO CHILDREN ARE BROKEN, NEED TO SEE WHAT IS GOING ON, SUPRRESSING FOR NOW
-#set ($void = $classList.put("0$element.name", $element))
+##set ($void = $classList.put("0$element.name", $element))
 #else
 #set ($void = $classList.put($element.name, $element))
 #end

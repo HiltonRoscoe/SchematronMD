@@ -19,7 +19,7 @@ MagicDraw Template for Schematron without Schema-awareness (SchematronMD)
 ## GET CHILD CLASSES FOR CLASS **
 #if($rel.general == $class)
 ## CALL NOW, WILL ENSURE CHILDREN OUTPUT BEFORE PARENT
-#runClass($rel.specific, $class)
+##runClass($rel.specific, $class)
 #set($void = $childClasses.add($rel.specific))
 #end
 #end
@@ -91,10 +91,9 @@ MagicDraw Template for Schematron without Schema-awareness (SchematronMD)
 #set($targetNamespace = $report.getStereotypePropertyString($package, "XML Schema", "targetNamespace").replace("<MAJOR_VERSION>",$majorVersion))
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2" xmlns:mp="http://mapping"
     xmlns:sqf="http://www.schematron-quickfix.com/validator/process"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" queryBinding="xslt3">    
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">    
     <sch:ns uri="$targetNamespace" prefix="cdf"/>    
-    <sch:ns uri="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>        
-    <sch:pattern>
+    <sch:ns uri="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>            
 #set($qualifiedName = $package.qualifiedName)
 #set ($classList = $map.createHashMap())
 #foreach ($element in $report.getOwnedElementsIncludingAdditional($package, true))
@@ -111,15 +110,27 @@ MagicDraw Template for Schematron without Schema-awareness (SchematronMD)
 #end
 #if($hasParent)
 ## TODO CHILDREN ARE BROKEN, NEED TO SEE WHAT IS GOING ON, SUPRRESSING FOR NOW
-##set ($void = $classList.put("0$element.name", $element))
+#set ($void = $classList.put("0$element.name", $element))
 #else
 #set ($void = $classList.put($element.name, $element))
 #end
 #end
 #end
 #end
+    <sch:pattern>
 #foreach ($class in $classList)
+#if($report.isEmpty($class.generalization))
 #runClass($class)
+#end
+#end
+    </sch:pattern>
+##CREATE TWO PATTERN, ONE THAT RUNS SPECIFIC RULES, ONE THAT RUNS GENERAL RULES, THIS WILL BREAK FOR DEEP HIERARCHIES!!
+    <sch:pattern>
+#foreach ($class in $classList)
+#if(!$report.isEmpty($class.generalization))
+## WE DON'T HAVE MULTIPLE INHERITANCE SO THIS ISN'T AN ISSUE
+#runClass($class $class.generalization.get(0).general)
+#end
 #end
     </sch:pattern>
 </sch:schema>

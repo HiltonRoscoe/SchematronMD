@@ -90,7 +90,6 @@ MagicDraw Template for Schematron without Schema-awareness (SchematronMD)
 #set($schemaFilename = $report.getStereotypePropertyString($package, "XML Schema", "schema_filename").replace("<MAJOR_VERSION>",$majorVersion))
 #set($targetNamespace = $report.getStereotypePropertyString($package, "XML Schema", "targetNamespace").replace("<MAJOR_VERSION>",$majorVersion))
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2" xmlns:mp="http://mapping"
-    xmlns:sqf="http://www.schematron-quickfix.com/validator/process"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">    
     <sch:ns uri="$targetNamespace" prefix="cdf"/>    
     <sch:ns uri="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>            
